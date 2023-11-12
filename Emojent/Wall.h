@@ -45,6 +45,7 @@ namespace PhysicsElements {
 		std::shared_ptr<P2World> world;
 		Array<WallBodyInfo> bodies;
 		// HashSet<P2BodyID> wall_ids;
+		// id -> 添え字の変換テーブル
 		HashTable<P2BodyID, int32> wall_ids_body;
 		Color col = Palette::Darkslategray;
 

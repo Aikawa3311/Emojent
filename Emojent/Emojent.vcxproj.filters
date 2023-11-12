@@ -171,34 +171,22 @@
     <ClCompile Include="Goal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Stage_Tutorial1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Stage_Tutorial2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Gun.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GunTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Stage_Tutorial3.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Stage_Stage1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Stage_Stage2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SaveData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Stage_Stage3.cpp">
+    <ClCompile Include="StageSelect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StageSelect.cpp">
+    <ClCompile Include="Stage_Demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StageReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -875,34 +863,22 @@
     <ClInclude Include="StateProperty.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Stage_Tutorial1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Stage_Tutorial2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Gun.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GunTarget.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Stage_Tutorial3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Stage_Stage1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Stage_Stage2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SaveData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Stage_Stage3.h">
+    <ClInclude Include="StageSelect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StageSelect.h">
+    <ClInclude Include="Stage_Demo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StageReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

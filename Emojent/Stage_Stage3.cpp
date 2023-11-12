@@ -5,7 +5,6 @@
 void PhysicsElements::Stage_Stage3::init()
 {
 	// シーン関連
-	stage_scene_state = SceneState::Stage_Stage3;
 	stage_num = 5;
 	goal->set_stage_num(stage_num);
 
@@ -89,7 +88,7 @@ void PhysicsElements::Stage_Stage3::create_stage()
 	// 施錠壁（トグル）
 	id = wall->addRect(Vec2(160, 352), Vec2(32, 224));
 	gun_targets->add_gun_target(id, Vec2(1120, 128), WallFilterType::Ignore, WallFilterType::Normal);
-	wall_toggle_dangerous.emplace_back(id);
+	// wall_toggle_dangerous.emplace_back(id);
 
 	// プレイヤースタート地点
 	start_pos = Vec2(96, 295);
@@ -120,7 +119,8 @@ PhysicsElements::Stage_Stage3::Stage_Stage3(InitData const& init_data)
 void PhysicsElements::Stage_Stage3::Update()
 {
 	update_pipeline();
-
+	Print << stage_col1;
+	Print << stage_col2;
 }
 
 void PhysicsElements::Stage_Stage3::Draw() const

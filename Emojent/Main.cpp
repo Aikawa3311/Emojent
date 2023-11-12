@@ -3,13 +3,8 @@
 # include "GlobalSetting.h"
 # include "Stage.h"
 #include "StageTest.h"
-#include "Stage_Tutorial1.h"
-#include "Stage_Tutorial2.h"
-#include "Stage_Tutorial3.h"
-#include "Stage_Stage1.h"
-#include "Stage_Stage2.h"
-#include "Stage_Stage3.h"
 #include "StageSelect.h"
+#include "Stage_Demo.h"
 
 void Main()
 {
@@ -18,19 +13,40 @@ void Main()
 	// アセットの読み込み
 	AssetRegister::Regist();
 
+	Window::SetTitle(U"Emojent");
+
 	// 2D 物理演算のワールド
 	// P2World world;
 
 	// シーンマネージャー
 	App scene_manager;
-	scene_manager.add<PhysicsElements::Stage_Tutorial1>(SceneState::Stage_Tutorial1);
-	scene_manager.add<PhysicsElements::Stage_Tutorial2>(SceneState::Stage_Tutorial2);
-	scene_manager.add<PhysicsElements::Stage_Tutorial3>(SceneState::Stage_Tutorial3);
-	scene_manager.add<PhysicsElements::Stage_Stage1>(SceneState::Stage_Stage1);
-	scene_manager.add<PhysicsElements::Stage_Stage2>(SceneState::Stage_Stage2);
-	scene_manager.add<PhysicsElements::Stage_Stage3>(SceneState::Stage_Stage3);
-	scene_manager.add<StageSelect>(SceneState::StageSelect);
-	scene_manager.init(SceneState::Stage_Tutorial1, 0.0s);
+	// scene_manager.add<PhysicsElements::Stage_Tutorial1>(SceneState::Stage_Tutorial1);
+	// scene_manager.add<PhysicsElements::Stage_Tutorial2>(SceneState::Stage_Tutorial2);
+	// scene_manager.add<PhysicsElements::Stage_Tutorial3>(SceneState::Stage_Tutorial3);
+	// scene_manager.add<PhysicsElements::Stage_Stage1>(SceneState::Stage_Stage1);
+	// scene_manager.add<PhysicsElements::Stage_Stage2>(SceneState::Stage_Stage2);
+	// scene_manager.add<PhysicsElements::Stage_Stage3>(SceneState::Stage_Stage3);
+	// scene_manager.add<PhysicsElements::Stage_Demo>(SceneState::Stage_Demo);
+	// scene_manager.add<StageSelect>(SceneState::StageSelect);
+	// scene_manager.add<PhysicsElements::Stage_Tutorial1>(Global::stage_scene_id_offset + 0);
+	// scene_manager.add<PhysicsElements::Stage_Tutorial2>(Global::stage_scene_id_offset + 1);
+	// scene_manager.add<PhysicsElements::Stage_Tutorial3>(Global::stage_scene_id_offset + 2);
+	// scene_manager.add<PhysicsElements::Stage_Stage1>(Global::stage_scene_id_offset + 3);
+	// scene_manager.add<PhysicsElements::Stage_Stage2>(Global::stage_scene_id_offset + 4);
+	// scene_manager.add<PhysicsElements::Stage_Stage3>(Global::stage_scene_id_offset + 5);
+
+	scene_manager.add<PhysicsElements::Stage>(Global::stage_scene_id_offset + 0);
+	scene_manager.add<PhysicsElements::Stage>(Global::stage_scene_id_offset + 1);
+	scene_manager.add<PhysicsElements::Stage>(Global::stage_scene_id_offset + 2);
+	scene_manager.add<PhysicsElements::Stage>(Global::stage_scene_id_offset + 3);
+	scene_manager.add<PhysicsElements::Stage>(Global::stage_scene_id_offset + 4);
+	scene_manager.add<PhysicsElements::Stage>(Global::stage_scene_id_offset + 5);
+	scene_manager.add<StageSelect>(Global::stage_select_scene_id);
+
+	scene_manager.get()->stage_num = Global::stage_scene_id_offset + 0;
+	scene_manager.init(Global::stage_scene_id_offset + 0, 0.0s);
+
+	// scene_manager.init(SceneState::Stage_Demo, 0.0s);
 	// scene_manager.changeScene(SceneState::StageTest, 0.0s);
 
 	// BGM

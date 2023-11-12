@@ -2,10 +2,9 @@
 #include "Stage.h"
 
 namespace PhysicsElements {
-	class Stage_Tutorial2 : public Stage
+	class Stage_Demo : public Stage
 	{
 	private:
-		
 
 	protected:
 		// 各変数の初期化など
@@ -14,12 +13,10 @@ namespace PhysicsElements {
 		// プレイヤー・ゴール・壁・アイテムの配置や壁の属性の設定
 		void create_stage() override;
 
-		// void draw_mid_layer() const override;
-
 		void change_next_scene() override;
 
 	public:
-		Stage_Tutorial2(InitData const& init);
+		Stage_Demo(InitData const& init);
 
 		void Update() override;
 		void Draw() const override;

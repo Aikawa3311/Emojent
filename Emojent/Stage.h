@@ -44,6 +44,17 @@ namespace PhysicsElements{
 		double trail_life_time = 0.7;
 		double trail_size = 25;
 		bool is_trail_on = false; // 一度中空でワイヤを使用してから次に着地するまで true
+
+		// ★ステージのランクタイム
+		Array<double> score_time;
+
+		// オープニング関連
+		// オープニングかどうか
+		bool is_opening = false;
+		// オープニングの黒
+		RenderTexture rt_opening;
+		// オープニングのキーフレーム
+		SimpleAnimation opening_keyframe;
 		
 		// -----
 		// メンバ関数
@@ -72,13 +83,23 @@ namespace PhysicsElements{
 		// 右下の方にタイムを描画
 		void draw_time() const;
 
-		// デバグ用
-		int debug_cnt = 0;
+		// フェードイン中の更新（主にシェーダの更新用）
+		void updateFadeIn(double t) override;
+
+		// チュートリアル用描画関数
+		void draw_tutorial1() const;
+		void draw_tutorial2() const;
+		void draw_tutorial3() const;
+
+		// オープニング関連
+		void opening_setup();
+		void opening_update();
+		void opening_draw() const;
 
 	protected:
 		// ステージの名前
 		String stage_name = U"<NONE>";
-		SceneState stage_scene_state;
+		// SceneState stage_scene_state;
 		// ステージ番号
 		int32 stage_num = 0;
 
@@ -113,6 +134,9 @@ namespace PhysicsElements{
 		ConstantBuffer<PSPixelScreenSize> shader_size;
 		ConstantBuffer<PSPixelTime> shader_time;
 
+		// シェーダ用のタイマー（シーン繊維のフェードイン中から動作、クリア後も動き続ける）
+		Stopwatch shader_stopwatch;
+
 		// スタート地点
 		Vec2 start_pos;
 		// リスポーン地点
@@ -127,9 +151,8 @@ namespace PhysicsElements{
 		// ステージの経過時間
 		Stopwatch stopwatch;
 
-		// 状態が変化する壁
-		Array<P2BodyID> wall_toggle_ignore;		// ignore にトグルする壁
-		Array<P2BodyID> wall_toggle_dangerous;	// dangerous にトグルする壁
+		// 壁のアイコン
+		Array<std::pair<P2BodyID, String>> wall_icons;
 
 		// アイテム
 		std::unique_ptr<Item> items;
@@ -139,6 +162,9 @@ namespace PhysicsElements{
 		// -----
 		// 変数の初期化など
 		virtual void init();
+
+		// TOML ファイルからの読み込み
+		void load_stage_toml(FilePath const& path);
 
 		// 基本的な update の処理パイプライン
 		void update_pipeline();

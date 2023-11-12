@@ -14,8 +14,6 @@ namespace PhysicsElements {
 		// プレイヤー・ゴール・壁・アイテムの配置や壁の属性の設定
 		void create_stage() override;
 
-		void draw_mid_layer() const override;
-
 		void change_next_scene() override;
 
 	public:

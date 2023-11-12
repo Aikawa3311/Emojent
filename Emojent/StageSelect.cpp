@@ -59,25 +59,32 @@ void StageSelect::Update()
 			// ステージに移動
 			switch (i) {
 			case 0:
-				changeScene(SceneState::Stage_Tutorial1, 500);
+				changeScene(Global::stage_scene_id_offset + 0, 500);
+				getData().stage_num = Global::stage_scene_id_offset + 0;
 				break;
 			case 1:
-				changeScene(SceneState::Stage_Tutorial2, 500);
+				changeScene(Global::stage_scene_id_offset + 1, 500);
+				getData().stage_num = Global::stage_scene_id_offset + 1;
 				break;
 			case 2:
-				changeScene(SceneState::Stage_Tutorial3, 500);
+				changeScene(Global::stage_scene_id_offset + 2, 500);
+				getData().stage_num = Global::stage_scene_id_offset + 2;
 				break;
 			case 3:
-				changeScene(SceneState::Stage_Stage1, 500);
+				changeScene(Global::stage_scene_id_offset + 3, 500);
+				getData().stage_num = Global::stage_scene_id_offset + 3;
 				break;
 			case 4:
-				changeScene(SceneState::Stage_Stage2, 500);
+				changeScene(Global::stage_scene_id_offset + 4, 500);
+				getData().stage_num = Global::stage_scene_id_offset + 4;
 				break;
 			case 5:
-				changeScene(SceneState::Stage_Stage3, 500);
+				changeScene(Global::stage_scene_id_offset + 5, 500);
+				getData().stage_num = Global::stage_scene_id_offset + 5;
 				break;
 			default:
-				changeScene(SceneState::Stage_Tutorial1, 500);
+				changeScene(Global::stage_scene_id_offset + 0, 500);
+				getData().stage_num = Global::stage_scene_id_offset + 0;
 			}
 		}
 	}

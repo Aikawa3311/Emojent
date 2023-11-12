@@ -70,74 +70,6 @@ void PhysicsElements::Wire::check_collision()
 			min_dist = collision.dist;
 		}
 	}
-	/*
-	for (int32 i = 0; i < (int32)wall_bodies.size(); ++i) {
-		// ignore フィルタと Platform フィルタの壁は無視する
-		if (wall_bodies[i].filter_type == WallFilterType::Ignore
-			|| wall_bodies[i].filter_type == WallFilterType::Platform) {
-			continue;
-		}
-
-		// 壁との衝突を判定, 形によって分岐
-		switch (wall_bodies[i].shape_type) {
-		case WallShapeType::Circle:
-			{
-				// 丸と線分の交差位置を求める
-				Circle const circle = wall_bodies[i].body.as<P2Circle>(0)->getCircle();
-				Optional<Array<Vec2>> const pos_intersect = circle.intersectsAt(wire_sensor);
-				if (!pos_intersect.has_value() || pos_intersect.value().size() == 0) continue;
-				for (Vec2 const& p : pos_intersect.value()) {
-					// 交差がまだない状態 or これまでの交差より近ければ更新
-					double dist = p.distanceFromSq(player_pos);
-					if (collision_info.second == -1 || dist < min_dist) {
-						collision_info.first = p;
-						collision_info.second = i;
-						min_dist = dist;
-					}
-				}
-			}
-
-			break;
-
-		case WallShapeType::Rect:
-			{
-				// 四角形と線分の交差位置を求める
-				Quad const quad = wall_bodies[i].body.as<P2Rect>(0)->getQuad();
-				Optional<Array<Vec2>> const pos_intersect = quad.intersectsAt(wire_sensor);
-				if (!pos_intersect.has_value() || pos_intersect.value().size() == 0) continue;
-				for (Vec2 const& p : pos_intersect.value()) {
-					// 交差がまだない状態 or これまでの交差より近ければ更新
-					double dist = p.distanceFromSq(player_pos);
-					if (collision_info.second == -1 || dist < min_dist) {
-						collision_info.first = p;
-						collision_info.second = i;
-						min_dist = dist;
-					}
-				}
-			}
-
-			break;
-
-		case WallShapeType::Polygon:
-			// ポリゴンと線分の交差位置を求める
-			Polygon const polygon = wall_bodies[i].body.as<P2Polygon>(0)->getPolygon();
-			Optional<Array<Vec2>> const pos_intersect = polygon.intersectsAt(wire_sensor);
-			if (!pos_intersect.has_value() || pos_intersect.value().size() == 0) continue;
-			for (Vec2 const& p : pos_intersect.value()) {
-				// 交差がまだない状態 or これまでの交差より近ければ更新
-				double dist = p.distanceFromSq(player_pos);
-				if (collision_info.second == -1 || dist < min_dist) {
-					collision_info.first = p;
-					collision_info.second = i;
-					min_dist = dist;
-				}
-			}
-
-			break;
-		}
-	}
-	*/
-
 }
 
 bool PhysicsElements::Wire::wire_bending_add()
@@ -185,7 +117,7 @@ bool PhysicsElements::Wire::wire_bending_add()
 	Vec2 vec_e = (now_pos - wire_joint_bend.back().v).normalized();
 	vec_e.rotate90();
 	std::sort(bend_booking.begin(), bend_booking.end(), [&](WireBendInfo const& lhs, WireBendInfo const& rhs) {
-		double len1 = Abs(lhs.v.cross(vec_e)), len2 = Abs(rhs.v.cross(vec_e));
+		double len1 = Abs((wire_joint_bend.back().v - lhs.v).cross(vec_e)), len2 = Abs((wire_joint_bend.back().v - rhs.v).cross(vec_e));
 		return len1 < len2;
 	});
 
@@ -199,7 +131,7 @@ bool PhysicsElements::Wire::wire_bending_add()
 			Vec2 const& v2 = bend_booking[i].v;
 
 			// 3 点が一直線上にある場合は消す
-			if ((v1 - v0).cross(v2 - v0) == 0.0) {
+			if (Abs((v1 - v0).cross(v2 - v0)) < 1e-9) {
 				wire_joint_bend.pop_back();
 			}
 			else if (Geometry2D::IsClockwise(v0, v1, v2) == cw) {
@@ -219,7 +151,11 @@ bool PhysicsElements::Wire::wire_bending_add()
 		Vec2 const& v0 = wire_joint_bend[wire_joint_bend.size() - 2].v;
 		Vec2 const& v1 = wire_joint_bend.back().v;
 		Vec2 const& v2 = now_pos;
-		if (Geometry2D::IsClockwise(v0, v1, v2) == cw) {
+		if (Abs((v1 - v0).cross(v2 - v0)) < 1e-9) {
+			// 3 点が一直線上にある場合は削除を免除
+			break;
+		}
+		else if (Geometry2D::IsClockwise(v0, v1, v2) == cw) {
 			// cw が変わらなければ取り除かない
 			break;
 		}
@@ -251,11 +187,15 @@ bool PhysicsElements::Wire::wire_bending_unwind()
 	bool flag_change = false;
 	while (wire_joint_bend.size() >= 2) {
 		// clockwise の確認
-		Vec2 const& p1 = wire_joint_bend[wire_joint_bend.size() - 2].v;
-		Vec2 const& p2 = wire_joint_bend.back().v;
-		Vec2 const& p3 = player->get_pos();
+		Vec2 const& v0 = wire_joint_bend[wire_joint_bend.size() - 2].v;
+		Vec2 const& v1 = wire_joint_bend.back().v;
+		Vec2 const& v2 = player->get_pos();
 
-		if (Geometry2D::IsClockwise(p1, p2, p3) == wire_joint_bend.back().cw) {
+		if (Abs((v1 - v0).cross(v2 - v0)) < 1e-9) {
+			// 3 点が一直線上にある場合は削除を免除
+			break;
+		}
+		else if (Geometry2D::IsClockwise(v0, v1, v2) == wire_joint_bend.back().cw) {
 			// 同じなら解消は発生しない
 			break;
 		}
@@ -456,7 +396,6 @@ void PhysicsElements::Wire::Draw() const
 				// Print << angle;
 				TextureAsset(U"emoji_grab_hand").resized(40).rotated(Math::HalfPi - angle).drawAt(player->get_pos() + vec.normalized() * 40);
 			}
-
 		}
 	}
 	else if(debug_draw_wire_guide){

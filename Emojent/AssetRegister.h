@@ -101,6 +101,7 @@ public:
 		AudioAsset::Register(U"medal", Resource(U"SE/medal_selab.mp3"));
 		AudioAsset::Register(U"new_record", Resource(U"SE/new_record_selab.mp3"));
 		AudioAsset::Register(U"mouseover", Resource(U"SE/mouseover_selab.mp3"));
+		AudioAsset::Register(U"jump", Resource(U"SE/jump_selab.mp3"));
 		AudioAsset::Register(U"bend1", Resource(U"SE/bend1.wav"));
 		AudioAsset::Register(U"bend2", Resource(U"SE/bend2.wav"));
 		AudioAsset::Register(U"bend3", Resource(U"SE/bend3.wav"));

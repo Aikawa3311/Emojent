@@ -5,7 +5,6 @@
 void PhysicsElements::Stage_Tutorial2::init()
 {
 	// シーン関連
-	stage_scene_state = SceneState::Stage_Tutorial2;
 	stage_num = 1;
 	goal->set_stage_num(stage_num);
 
@@ -53,7 +52,7 @@ void PhysicsElements::Stage_Tutorial2::create_stage()
 	wall->addRect(Vec2(448, 320), Vec2(32, 160));
 	id = wall->addRect(Vec2(480, 320), Vec2(160, 96));
 	items->item_add(id, WallFilterType::Ignore, Vec2(1206, 342), U"emoji_key");
-	wall_toggle_ignore.emplace_back(id);
+	// wall_toggle_ignore.emplace_back(id);
 	wall->addRect(Vec2(448, 0), Vec2(192, 128));
 
 	// スロープとその先の地面
@@ -66,7 +65,7 @@ void PhysicsElements::Stage_Tutorial2::create_stage()
 	id = wall->addRect(Vec2(864, 384), Vec2(384, 32));
 	wall->change_filter(id, WallFilterType::Dangerous);
 	gun_targets->add_gun_target(id, Vec2(1200, 96), WallFilterType::Normal, WallFilterType::Dangerous);
-	wall_toggle_dangerous.emplace_back(id);
+	// wall_toggle_dangerous.emplace_back(id);
 
 	// アイテム上の屋根
 	wall->addRect(Vec2(1168, 256), Vec2(80, 32));
@@ -77,7 +76,7 @@ void PhysicsElements::Stage_Tutorial2::create_stage()
 	// 壁（トグル）
 	id = wall->addRect(Vec2(352, 478), Vec2(32, 178));
 	items->item_add(id, WallFilterType::Ignore, Vec2(1120, 530), U"emoji_key");
-	wall_toggle_ignore.emplace_back(id);
+	// wall_toggle_ignore.emplace_back(id);
 
 	// 危険な床
 	id = wall->addRect(Vec2(640, 688), Vec2(416, 32));
@@ -101,52 +100,54 @@ void PhysicsElements::Stage_Tutorial2::create_stage()
 	stopwatch.start();
 }
 
-void PhysicsElements::Stage_Tutorial2::draw_mid_layer() const
-{
-	// 説明用
-	// 操作説明1
-	Vec2 const& ppos = player->get_pos();
-	double a = 0;
-	if (ppos.x < 500 && ppos.y < 300) {
-		a = 1.0;
-	}
-	else {
-		a = 0.9;
-	}
-	RoundRect(Vec2(94, 94), Vec2(266, 80), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
-	FontAsset(U"RoundedMgenplus28")(U"点滅している壁に").draw(Vec2(106, 98), { Palette::Steelblue, a });
-	FontAsset(U"RoundedMgenplus28")(U"当たるとミス").draw(Vec2(106, 130), { Palette::Steelblue, a });
-
-	if (ppos.x > 500 && ppos.y < 300) {
-		a = 1.0;
-	}
-	else {
-		a = 0.9;
-	}
-	RoundRect(Vec2(800, 128), Vec2(332, 152), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
-	FontAsset(U"RoundedMgenplus28")(U"左クリックで発砲").draw(Vec2(810, 130), { Palette::Steelblue, a });
-	GunTarget::draw_pos(Vec2(840, 200), false);
-	FontAsset(U"RoundedMgenplus28")(U"に弾を当てると").draw(Vec2(880, 180), { Palette::Steelblue, a });
-	FontAsset(U"RoundedMgenplus28")(U"壁の状態が切り替わる").draw(Vec2(810, 230), { Palette::Steelblue, a });
-
-	if (ppos.y > 332) {
-		a = 1.0;
-	}
-	else {
-		a = 0.9;
-	}
-	RoundRect(Vec2(664, 576), Vec2(352, 90), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
-	FontAsset(U"RoundedMgenplus28")(U"発砲の反動で\n逆方向に速度を得られる").draw(Vec2(674, 578), { Palette::Steelblue, a });
-	Circle(Vec2(830, 420), 20).drawFrame(8, { Palette::Red, 0.6 });
-	TextureAsset(U"emoji_face_sanglass").resized(50).rotated(Math::QuarterPi).drawAt(Vec2(695, 510), AlphaF(0.5));
-	Line(Vec2(695, 510), Vec2(830, 420)).draw(LineStyle::SquareDot, 4.0, { Palette::Darkorange, 0.6 });
-	TextureAsset(U"emoji_gun").resized(45).rotated(Math::QuarterPi).drawAt(Vec2(665, 470), AlphaF(0.6));
-	// Line(Vec2(640, 180).movedBy(25, 25), Vec2(640, 180).movedBy(50, 50)).drawArrow(10, SizeF(20, 20), { Palette::Darkorange, 0.6 });
-}
+//void PhysicsElements::Stage_Tutorial2::draw_mid_layer() const
+//{
+//	// 説明用
+//	// 操作説明1
+//	/*Vec2 const& ppos = player->get_pos();
+//	double a = 0;
+//	if (ppos.x < 500 && ppos.y < 300) {
+//		a = 1.0;
+//	}
+//	else {
+//		a = 0.9;
+//	}
+//	RoundRect(Vec2(94, 94), Vec2(266, 80), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+//	FontAsset(U"RoundedMgenplus28")(U"点滅している壁に").draw(Vec2(106, 98), { Palette::Steelblue, a });
+//	FontAsset(U"RoundedMgenplus28")(U"当たるとミス").draw(Vec2(106, 130), { Palette::Steelblue, a });
+//
+//	if (ppos.x > 500 && ppos.y < 300) {
+//		a = 1.0;
+//	}
+//	else {
+//		a = 0.9;
+//	}
+//	RoundRect(Vec2(800, 128), Vec2(332, 152), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+//	FontAsset(U"RoundedMgenplus28")(U"左クリックで発砲").draw(Vec2(810, 130), { Palette::Steelblue, a });
+//	GunTarget::draw_pos(Vec2(840, 200), false);
+//	FontAsset(U"RoundedMgenplus28")(U"に弾を当てると").draw(Vec2(880, 180), { Palette::Steelblue, a });
+//	FontAsset(U"RoundedMgenplus28")(U"壁の状態が切り替わる").draw(Vec2(810, 230), { Palette::Steelblue, a });
+//
+//	if (ppos.y > 332) {
+//		a = 1.0;
+//	}
+//	else {
+//		a = 0.9;
+//	}
+//	RoundRect(Vec2(664, 576), Vec2(352, 90), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+//	FontAsset(U"RoundedMgenplus28")(U"発砲の反動で\n逆方向に速度を得られる").draw(Vec2(674, 578), { Palette::Steelblue, a });
+//	Circle(Vec2(830, 420), 20).drawFrame(8, { Palette::Red, 0.6 });
+//	TextureAsset(U"emoji_face_sanglass").resized(50).rotated(Math::QuarterPi).drawAt(Vec2(695, 510), AlphaF(0.5));
+//	Line(Vec2(695, 510), Vec2(830, 420)).draw(LineStyle::SquareDot, 4.0, { Palette::Darkorange, 0.6 });
+//	TextureAsset(U"emoji_gun").resized(45).rotated(Math::QuarterPi).drawAt(Vec2(665, 470), AlphaF(0.6));*/
+//
+//	// Line(Vec2(640, 180).movedBy(25, 25), Vec2(640, 180).movedBy(50, 50)).drawArrow(10, SizeF(20, 20), { Palette::Darkorange, 0.6 });
+//}
 
 void PhysicsElements::Stage_Tutorial2::change_next_scene()
 {
-	changeScene(SceneState::Stage_Tutorial3, 500);
+	changeScene(getData().stage_num + 1, 500);
+	++getData().stage_num;
 }
 
 PhysicsElements::Stage_Tutorial2::Stage_Tutorial2(InitData const& init_data)

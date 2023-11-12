@@ -48,7 +48,9 @@ private:
 	bool is_new_record = false;
 
 	// ステージのメダル獲得基準タイム
-	std::array<double, 2> score_time = { 0.0, 0.0 };
+	// std::array<double, 2> score_time = { 0.0, 0.0 };
+	Array<double> score_time;
+
 	// メダル
 	int32 medal_num = 0;
 
@@ -132,6 +134,7 @@ public:
 	// -----
 	void set_pos(Vec2 const & pos);
 	void set_stage_num(int32 const num);
+	void set_score_time(Array<double> const& time);
 
 	bool get_cleared() const;
 	bool get_result() const;

@@ -69,7 +69,9 @@ void Goal::update_according_to_state()
 		// ボタンの押下状態を確認
 		if (anim_keyframes[U"button_t"] > 0.0) {
 			// next ボタン
-			is_clicked_next_button = draw_pos_next_button.leftClicked();
+			if (stage_num - Global::stage_scene_id_offset < Global::stage_num - 1) {
+				is_clicked_next_button = draw_pos_next_button.leftClicked();
+			}
 			// restart ボタン
 			is_clicked_restart_button = draw_pos_restart_button.leftClicked();
 			// back ボタン
@@ -132,8 +134,8 @@ Array<LineString> Goal::to_line_strings(const Vec2& basePos, const Array<Outline
 void Goal::read_savedata()
 {
 	SaveData data;
-	best_time = data.read_best_time(stage_num);
-	best_medal_num = data.read_medal_num(stage_num);
+	best_time = data.read_best_time(stage_num - Global::stage_scene_id_offset);
+	best_medal_num = data.read_medal_num(stage_num - Global::stage_scene_id_offset);
 }
 
 void Goal::write_savedata()
@@ -141,11 +143,11 @@ void Goal::write_savedata()
 	SaveData data;
 	// タイムがこれまでのベストより良ければ更新
 	if (stopwatch.sF() < best_time) {
-		data.write_best_time(stage_num, stopwatch.sF());
+		data.write_best_time(stage_num - Global::stage_scene_id_offset, stopwatch.sF());
 	}
 	// メダル数がこれまでより良ければ更新
 	if (medal_num > best_medal_num) {
-		data.write_medal_num(stage_num, medal_num);
+		data.write_medal_num(stage_num - Global::stage_scene_id_offset, medal_num);
 	}
 }
 
@@ -168,7 +170,7 @@ void Goal::calc_medal_num()
 void Goal::init_stage_data()
 {
 	// そのステージのメダル獲得タイムを取得
-	score_time = Global::score_time[stage_num];
+	// score_time = Global::score_time[stage_num - Global::stage_scene_id_offset];
 
 	// セーブデータ側からそのステージのベストタイムとメダル読み込み
 	read_savedata();
@@ -338,7 +340,7 @@ void Goal::draw_result() const
 	bool is_mouse_on = (draw_pos_next_button.intersects(Cursor::PosF()));
 	a = is_mouse_on ? t * 1.0 : t * 0.5;
 	s = is_mouse_on ? 1.2 : 1.0;
-	if (stage_num < Global::stage_num - 1) {
+	if (stage_num - Global::stage_scene_id_offset < Global::stage_num - 1) {
 		TextureAsset(U"emoji_next").resized(100).draw(draw_pos_next_button.pos, {Palette::White, a});
 		TextureAsset(U"result_next").draw(Arg::center = draw_pos_next_button.pos + draw_pos_next_button.size.movedBy(-10, -10), { Palette::Black, a });
 	}
@@ -367,6 +369,11 @@ void Goal::set_stage_num(int32 const num)
 {
 	stage_num = num;
 	init_stage_data();
+}
+
+void Goal::set_score_time(Array<double> const& time)
+{
+	score_time = time;
 }
 
 bool Goal::get_cleared() const

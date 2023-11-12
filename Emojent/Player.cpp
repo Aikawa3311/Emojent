@@ -55,6 +55,8 @@ void PhysicsElements::Player::Update(){
 
 	// キー入力によるジャンプ
 	if (!is_freeze && on_ground && (KeyUp.down() || KeyW.down())) {
+		// 音を鳴らす
+		AudioAsset(U"jump").playOneShot(1.0);
 		body.applyLinearImpulse(Vec2(0, -jump_speed));
 	}
 	

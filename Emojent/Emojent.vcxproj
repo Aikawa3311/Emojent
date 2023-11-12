@@ -124,14 +124,10 @@
     <ClCompile Include="PlayerMissController.cpp" />
     <ClCompile Include="SaveData.cpp" />
     <ClCompile Include="Stage.cpp" />
+    <ClCompile Include="StageReader.cpp" />
     <ClCompile Include="StageSelect.cpp" />
     <ClCompile Include="StageTest.cpp" />
-    <ClCompile Include="Stage_Stage1.cpp" />
-    <ClCompile Include="Stage_Stage2.cpp" />
-    <ClCompile Include="Stage_Stage3.cpp" />
-    <ClCompile Include="Stage_Tutorial1.cpp" />
-    <ClCompile Include="Stage_Tutorial2.cpp" />
-    <ClCompile Include="Stage_Tutorial3.cpp" />
+    <ClCompile Include="Stage_Demo.cpp" />
     <ClCompile Include="StarParticleSystem.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -346,14 +342,10 @@
     <ClInclude Include="SaveData.h" />
     <ClInclude Include="ShaderConstantBuffer.h" />
     <ClInclude Include="Stage.h" />
+    <ClInclude Include="StageReader.h" />
     <ClInclude Include="StageSelect.h" />
     <ClInclude Include="StageTest.h" />
-    <ClInclude Include="Stage_Stage1.h" />
-    <ClInclude Include="Stage_Stage2.h" />
-    <ClInclude Include="Stage_Stage3.h" />
-    <ClInclude Include="Stage_Tutorial1.h" />
-    <ClInclude Include="Stage_Tutorial2.h" />
-    <ClInclude Include="Stage_Tutorial3.h" />
+    <ClInclude Include="Stage_Demo.h" />
     <ClInclude Include="StarParticleSystem.h" />
     <ClInclude Include="StateProperty.h" />
     <ClInclude Include="stdafx.h" />

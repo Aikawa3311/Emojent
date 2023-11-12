@@ -5,7 +5,6 @@
 void PhysicsElements::Stage_Stage1::init()
 {
 	// シーン関連
-	stage_scene_state = SceneState::Stage_Stage1;
 	stage_num = 3;
 	goal->set_stage_num(stage_num);
 
@@ -61,7 +60,7 @@ void PhysicsElements::Stage_Stage1::create_stage()
 	id = wall->addRect(Vec2(576, 384), Vec2(672, 32));
 	wall->change_filter(id, WallFilterType::Dangerous);
 	gun_targets->add_gun_target(id, Vec2(1086, 96), WallFilterType::Normal, WallFilterType::Dangerous);
-	wall_toggle_dangerous.emplace_back(id);
+	// wall_toggle_dangerous.emplace_back(id);
 
 	// プラットフォーム
 	id = wall->addRect(Vec2(992, 320), Vec2(256, 4));
@@ -74,7 +73,7 @@ void PhysicsElements::Stage_Stage1::create_stage()
 	// 錠前壁（トグル）
 	id = wall->addRect(Vec2(1120, 416), Vec2(32, 160));
 	items->item_add(id, WallFilterType::Ignore, Vec2(1088, 256), U"emoji_key");
-	wall_toggle_ignore.emplace_back(id);
+	// wall_toggle_ignore.emplace_back(id);
 
 	// ゴール足場
 	wall->addRect(Vec2(1120, 576), Vec2(160, 160));
@@ -97,7 +96,8 @@ void PhysicsElements::Stage_Stage1::draw_mid_layer() const
 
 void PhysicsElements::Stage_Stage1::change_next_scene()
 {
-	changeScene(SceneState::Stage_Stage2, 500);
+	changeScene(getData().stage_num+1, 500);
+	++getData().stage_num;
 }
 
 PhysicsElements::Stage_Stage1::Stage_Stage1(InitData const& init_data)

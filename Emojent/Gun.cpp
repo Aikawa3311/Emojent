@@ -209,11 +209,11 @@ void PhysicsElements::Gun::Draw() const
 		double angle = Atan2(-ray_e.x, -ray_e.y);
 		// TextureAsset(U"icon_gun").rotated(Math::HalfPi - angle).drawAt(body.getPos(), Palette::Yellow);
 		TextureAsset(U"emoji_gun").resized(50).flipped(angle < 0.0).rotated(Math::HalfPi - angle).drawAt(player->get_pos() + ray_e * draw_offset);
-	}
 
-	// ダッシュのクールタイムを描画
-	if (cooldown_timer.isStarted()) {
-		Circle(player->get_pos(), player->get_body_size() * 1.4).drawArc(0, -(cooldown_timer.sF() / gun_cool_time) * Math::TwoPi, 0, 5, Palette::Red);
+		// 銃のクールタイムを描画
+		if (cooldown_timer.isStarted()) {
+			Circle(player->get_pos(), player->get_body_size() * 1.4).drawArc(0, -(cooldown_timer.sF() / gun_cool_time) * Math::TwoPi, 0, 5, Palette::Red);
+		}
 	}
 }
 

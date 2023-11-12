@@ -12,7 +12,7 @@ PhysicsElements::Stage::Stage(InitData const& init_data)
 	if (!shader_background)
 		throw Error{ U"Failed to load a shader file" };
 
-	// 諸々の初期化
+	// ステージ内の物体の諸々の初期化
 	world = std::make_shared<P2World>();
 	player = std::make_shared<Player>(world, camera);
 	wall = std::make_shared<Wall>(world);
@@ -21,16 +21,34 @@ PhysicsElements::Stage::Stage(InitData const& init_data)
 	gun_targets = std::make_shared<GunTarget>(wall);
 	gun = std::make_shared<Gun>(world, camera, player, wall, wire, gun_targets);
 	items = std::make_unique<Item>(player, wall);
-	goal = std::make_unique<Goal>(player, wire, camera, rt_stage, stopwatch, stage_num);
+	goal = std::make_unique<Goal>(player, wire, camera, rt_stage, stopwatch, getData().stage_num);
 	player_miss_ctrl = std::make_unique<PlayerMissController>(world, player);
 
+	// 現在のステージ番号の保存（Global::stage_scene_id_offset の下駄をはかせていることに注意）
+	stage_num = getData().stage_num;
+
+	// トレイルの寿命
 	trail.setLifeTime(trail_life_time);
 
-	// その他の変数は init() で代入
-	init();
+	// まだシェーダのタイマーが開始していなかったらタイマーを開始
+	if (!shader_stopwatch.isStarted()) {
+		shader_stopwatch.start();
+	}
 
-	// ステージを作る
+	// ステージを読み込む
 	// create_stage();
+	load_stage_toml(U"stage/stage_" + Format(stage_num - Global::stage_scene_id_offset + 1) + U".toml");
+
+	// その他の変数は init() で代入
+	// init();
+
+	// もしステージ番号が 0 ならオープニング演出の準備をする
+	opening_setup();
+
+	// オープニングでなければステージのタイマースタート
+	if (!is_opening) {
+		stopwatch.start();
+	}
 }
 
 void PhysicsElements::Stage::init()
@@ -38,7 +56,7 @@ void PhysicsElements::Stage::init()
 	// ステージ名
 	stage_name = U"テストステージ";
 	// シーンステート
-	stage_scene_state = SceneState::Stage_Tutorial1;
+	// stage_scene_state = SceneState::Stage_Tutorial1;
 
 	// シェーダの色など
 	shader_col1->color = ColorF(Palette::White).toFloat4();
@@ -83,7 +101,8 @@ void PhysicsElements::Stage::update_pipeline()
 	update_trail();
 
 	// シェーダー値の更新
-	shader_time->time = static_cast<float>(Scene::Time());
+	// shader_time->time = static_cast<float>(Scene::Time());
+	shader_time->time = static_cast<float>(shader_stopwatch.sF());
 
 	// カメラの更新
 	update_camera();
@@ -95,13 +114,16 @@ void PhysicsElements::Stage::update_pipeline()
 
 	// リトライ
 	if (!is_freeze && KeyR.down()) {
-		changeScene(stage_scene_state, 500);
+		changeScene(stage_num, 500);
 	}
 
 	// ステージセレクト
 	if (!is_freeze && KeyT.down()) {
-		changeScene(SceneState::StageSelect, 500);
+		changeScene(Global::stage_select_scene_id, 500);
 	}
+
+	// オープニングの終了判定
+	opening_update();
 }
 
 void PhysicsElements::Stage::draw_pipeline() const
@@ -203,6 +225,16 @@ void PhysicsElements::Stage::create_stage()
 
 void PhysicsElements::Stage::draw_mid_layer() const
 {
+	// チュートリアルの描画
+	if (stage_num == Global::stage_scene_id_offset + 0) {
+		draw_tutorial1();
+	}
+	else if (stage_num == Global::stage_scene_id_offset + 1) {
+		draw_tutorial2();
+	}
+	else if (stage_num == Global::stage_scene_id_offset + 2) {
+		draw_tutorial3();
+	}
 }
 
 void PhysicsElements::Stage::draw_background() const
@@ -223,6 +255,8 @@ void PhysicsElements::Stage::draw_background() const
 
 void PhysicsElements::Stage::change_next_scene()
 {
+	changeScene(stage_num + 1, 500);
+	++getData().stage_num;
 }
 
 void PhysicsElements::Stage::physics_collision_check()
@@ -343,13 +377,14 @@ void PhysicsElements::Stage::update_result()
 		// 音
 		AudioAsset(U"button").playOneShot(0.5);
 		// リスタートする
-		changeScene(stage_scene_state, 500);
+		changeScene(stage_num, 500);
 	}
 	if (goal->get_clicked_back_button()) {
 		// 音
 		AudioAsset(U"button").playOneShot(0.5);
-		// いったん終了する
-		changeScene(SceneState::StageSelect, 500);
+		// ステージセレクト画面へ
+		changeScene(Global::stage_select_scene_id, 500);
+		getData().stage_num = Global::stage_select_scene_id;
 	}
 }
 
@@ -420,30 +455,43 @@ void PhysicsElements::Stage::draw_wall() const
 	{
 		auto const transformer = camera.createTransformer();
 		// ignore にトグルする壁
+		//auto const& id_table = wall->get_wall_ids();
+		//for (auto const id : wall_toggle_ignore) {
+		//	int32 index = id_table.at(id);
+		//	Vec2 draw_pos = wall->nth_wall_barycenter(index);
+		//	WallBodyInfo const& wall_info = wall_bodies[index];
+		//	double a = (wall_info.filter_type == WallFilterType::Normal) ? 1.0 : 0.3;
+		//	String texture_name = (wall_info.filter_type == WallFilterType::Normal) ? U"emoji_lock" : U"emoji_unlock";
+
+		//	TextureAsset(texture_name).resized(40).drawAt(draw_pos , AlphaF(a));
+		//}
+
+		//// dangerous にトグルする壁
+		//for (auto const id : wall_toggle_dangerous) {
+		//	int32 index = id_table.at(id);
+		//	Vec2 draw_pos = wall->nth_wall_barycenter(index);
+
+		//	TextureAsset(U"emoji_warning").resized(30).drawAt(draw_pos);
+		//}
+
 		auto const& id_table = wall->get_wall_ids();
-		for (auto const id : wall_toggle_ignore) {
-			int32 index = id_table.at(id);
+		for (auto const& [wall_id, icon_name] : wall_icons) {
+			int32 index = id_table.at(wall_id);
 			Vec2 draw_pos = wall->nth_wall_barycenter(index);
+
+			// 壁が ignore ならアイコンも薄く表示する
 			WallBodyInfo const& wall_info = wall_bodies[index];
-			double a = (wall_info.filter_type == WallFilterType::Normal) ? 1.0 : 0.3;
-			String texture_name = (wall_info.filter_type == WallFilterType::Normal) ? U"emoji_lock" : U"emoji_unlock";
+			double a = (wall_info.filter_type == WallFilterType::Ignore) ? 0.3 : 1.0;
+			// 錠前なら少し大きく表示
+			double size = (icon_name == U"emoji_lock") ? 40 : 30;
+			// 錠前なら ignore 時に開いたアイコンに変える
+			String texture_name = icon_name;
+			if (texture_name == U"emoji_lock" && wall_info.filter_type == WallFilterType::Ignore) {
+				texture_name = U"emoji_unlock";
+			}
 
-			TextureAsset(texture_name).resized(40).drawAt(draw_pos , AlphaF(a));
-			//if (wall_info.filter_type == WallFilterType::Normal) {
-			//	TextureAsset(U"emoji_lock").resized(40).drawAt(wall_info.body.getPos());
-			//	// TextureAsset(U"emoji_lock").resized(40).drawAt(draw_pos);
-			//}
-			//else {
-			//	TextureAsset(U"emoji_unlock").resized(40).drawAt(wall_info.body.getPos(), AlphaF(0.3));
-			//}
-		}
-
-		// dangerous にトグルする壁
-		for (auto const id : wall_toggle_dangerous) {
-			int32 index = id_table.at(id);
-			Vec2 draw_pos = wall->nth_wall_barycenter(index);
-
-			TextureAsset(U"emoji_warning").resized(30).drawAt(draw_pos);
+			// 描画
+			TextureAsset(texture_name).resized(size).drawAt(draw_pos, AlphaF(a));
 		}
 	}
 }
@@ -473,6 +521,211 @@ void PhysicsElements::Stage::update_trail()
 	trail.update();
 }
 
+void PhysicsElements::Stage::load_stage_toml(FilePath const & path)
+{
+	TOMLReader tomlr(Resource(path));
+	if (!path) {
+		throw Error{ U"Failed to load `{}`"_fmt(path) };
+	}
+
+	// Console << U"----- toml {} 読み込み"_fmt(path);
+	// Console << U"ステージデータ読み込み";
+
+	// 各ステージ情報の取得
+	// stage_num = tomlr[U"stageinfo.id"].get<int32>();
+	goal->set_stage_num(stage_num);
+	stage_name = tomlr[U"stageinfo.name"].getString();
+	start_pos = Vec2{ tomlr[U"stageinfo.start_pos.x"].get<double>(), tomlr[U"stageinfo.start_pos.y"].get<double>() };
+	player->reset(start_pos);
+	goal->set_pos(Vec2{ tomlr[U"stageinfo.goal_pos.x"].get<double>(), tomlr[U"stageinfo.goal_pos.y"].get<double>() });
+	stage_col1 = Color( tomlr[U"stageinfo.col1.r"].get<int8>(), tomlr[U"stageinfo.col1.g"].get<int8>(), tomlr[U"stageinfo.col1.b"].get<int8>() );
+	stage_col2 = Color(tomlr[U"stageinfo.col2.r"].get<int8>(), tomlr[U"stageinfo.col2.g"].get<int8>(), tomlr[U"stageinfo.col2.b"].get<int8>());
+	stage_size = Vec2(tomlr[U"stageinfo.size.w"].get<int32>(), tomlr[U"stageinfo.size.h"].get<int32>());
+	world->setGravity(tomlr[U"stageinfo.gravity"].get<double>());
+	score_time.emplace_back(tomlr[U"stageinfo.rank2_time"].get<double>());
+	score_time.emplace_back(tomlr[U"stageinfo.rank3_time"].get<double>());
+	score_time.emplace_back(tomlr[U"stageinfo.rank4_time"].get<double>());
+	goal->set_score_time(score_time);
+
+	// シェーダの色など
+	shader_col1->color = ColorF(stage_col1).toFloat4();
+	shader_col2->color = ColorF(stage_col2).toFloat4();
+	shader_size->size = Float2(Scene::Size());
+
+	// Console << U"壁データ読み込み";
+	// 壁の情報の取得
+	for (auto const& wall_info : tomlr[U"stageinfo.wall"].tableArrayView()) {
+		// 形を確認
+		String shape_type_str = wall_info[U"shape"].getString();
+		WallShapeType shape_type = WallShapeType::Rect;
+		if (shape_type_str.lowercased() == U"circle") {
+			shape_type = WallShapeType::Circle;
+		}
+		else if (shape_type_str.lowercased() == U"triangle") {
+			shape_type = WallShapeType::Triangle;
+		}
+		else if (shape_type_str.lowercased() == U"polygon") {
+			shape_type = WallShapeType::Polygon;
+		}
+
+		// 頂点座標などを取得し実際に追加
+		P2BodyID id = 0;
+		switch (shape_type) {
+		case WallShapeType::Circle:
+			{
+				// 円の中心と半径を取得する
+				String center_name = (wall_info[U"center"].isEmpty()) ? U"pos" : U"center";
+				Vec2 center = Vec2{ wall_info[center_name + U".x"].get<double>(), wall_info[center_name + U".y"].get<double>() };
+				double r = wall_info[U"r"].get<double>();
+				id = wall->addCircle(center, r);
+			}
+			break;
+
+		case WallShapeType::Rect:
+			{
+				// 長方形の左上の座標とサイズを取得する
+				Vec2 pos = Vec2{ wall_info[U"pos.x"].get<double>(), wall_info[U"pos.y"].get<double>() };
+				Vec2 size = Vec2{ wall_info[U"size.x"].get<double>(), wall_info[U"size.y"].get<double>() };
+				id = wall->addRect(pos, size);
+			}
+			break;
+
+		case WallShapeType::Triangle:
+			{
+				// 三角形の基準点と三点の座標を取得する
+				Vec2 pos = Vec2{ wall_info[U"pos.x"].get<double>(), wall_info[U"pos.y"].get<double>() };
+				Vec2 v0 = Vec2{ wall_info[U"v0.x"].get<double>(), wall_info[U"v0.y"].get<double>() };
+				Vec2 v1 = Vec2{ wall_info[U"v1.x"].get<double>(), wall_info[U"v1.y"].get<double>() };
+				Vec2 v2 = Vec2{ wall_info[U"v2.x"].get<double>(), wall_info[U"v2.y"].get<double>() };
+
+				id = wall->addTriangle(pos, v0, v1, v2);
+			}
+			break;
+
+		case WallShapeType::Polygon:
+			{
+				// ポリゴンの各点を取得する
+				Array<Vec2> vertices;
+				for (int32 i = 0; !wall_info[U"v" + Format(i)].isEmpty(); ++i) {
+					// Vec2 v = Vec2{ wall_info[U"v" + Format(i) + U".x"].get<double>(), wall_info[U"v" + Format(i) + U".y"].get<double>() };
+					vertices.emplace_back(wall_info[U"v" + Format(i) + U".x"].get<double>(), wall_info[U"v" + Format(i) + U".y"].get<double>());
+				}
+			
+			}
+			break;
+		}
+
+		// 壁の属性の確定
+		String attr = (wall_info[U"attr"].isEmpty()) ? U"normal" : wall_info[U"attr"].getString();
+		WallFilterType filter = WallFilterType::Normal;
+		if (attr.lowercased() == U"ignore") {
+			filter = WallFilterType::Ignore;
+		}
+		else if (attr.lowercased() == U"dangerous") {
+			filter = WallFilterType::Dangerous;
+		}
+		else if (attr.lowercased() == U"platform") {
+			filter = WallFilterType::Platform;
+		}
+		wall->change_filter(id, filter);
+
+		// 壁のアイコンの確定
+		if (!wall_info[U"icon"].isEmpty()) {
+			String icon = wall_info[U"icon"].getString();
+			if (icon.lowercased() == U"lock") {
+				icon = U"emoji_lock";
+			}
+			else if(icon.lowercased() == U"warning") {
+				icon = U"emoji_warning";
+			}
+
+			wall_icons.emplace_back(id, icon);
+		}
+	}
+
+	auto const& wall_bodies = wall->get_bodies();
+
+	// Console << U"アイテム読み込み";
+	if (!tomlr[U"stageinfo.item"].isEmpty()) {
+		// アイテムの情報
+		for (auto const& item_info : tomlr[U"stageinfo.item"].tableArrayView()) {
+			// 場所の取得
+			Vec2 pos = Vec2{ item_info[U"pos.x"].get<double>(), item_info[U"pos.y"].get<double>() };
+
+			// 切り替え対象の壁
+			Array<int32> target_ids;
+			for (const auto& target_id : item_info[U"target_id"].arrayView())
+			{
+				target_ids << wall_bodies[target_id.get<int32>()].body.id();
+			}
+
+			// 取得後の属性
+			String attr = item_info[U"get_attr"].getString();
+			WallFilterType filter = WallFilterType::Normal;
+			if (attr.lowercased() == U"ignore") {
+				filter = WallFilterType::Ignore;
+			}
+			else if (attr.lowercased() == U"dangerous") {
+				filter = WallFilterType::Dangerous;
+			}
+			else if (attr.lowercased() == U"platform") {
+				filter = WallFilterType::Platform;
+			}
+
+			// テクスチャ名の取得
+			String texture = U"emoji_key";
+
+			items->item_add(target_ids.front(), filter, pos, texture);
+		}
+	}
+
+	// Console << U"的読み込み";
+	if (!tomlr[U"stageinfo.gun_target"].isEmpty()) {
+		// 的の情報
+		for (auto const& gun_target_info : tomlr[U"stageinfo.gun_target"].tableArrayView()) {
+			// 場所の取得
+			Vec2 pos = Vec2{ gun_target_info[U"pos.x"].get<double>(), gun_target_info[U"pos.y"].get<double>() };
+
+			// 切り替え対象の壁
+			Array<int32> target_ids;
+			for (const auto& target_id : gun_target_info[U"target_id"].arrayView())
+			{
+				target_ids << wall_bodies[target_id.get<int32>()].body.id();
+			}
+
+			// on 時の属性
+			String attr = gun_target_info[U"on_attr"].getString();
+			WallFilterType filter_on = WallFilterType::Normal;
+			if (attr.lowercased() == U"ignore") {
+				filter_on = WallFilterType::Ignore;
+			}
+			else if (attr.lowercased() == U"dangerous") {
+				filter_on = WallFilterType::Dangerous;
+			}
+			else if (attr.lowercased() == U"platform") {
+				filter_on = WallFilterType::Platform;
+			}
+
+			// off 時の属性
+			attr = gun_target_info[U"off_attr"].getString();
+			WallFilterType filter_off = WallFilterType::Normal;
+			if (attr.lowercased() == U"ignore") {
+				filter_off = WallFilterType::Ignore;
+			}
+			else if (attr.lowercased() == U"dangerous") {
+				filter_off = WallFilterType::Dangerous;
+			}
+			else if (attr.lowercased() == U"platform") {
+				filter_off = WallFilterType::Platform;
+			}
+
+			gun_targets->add_gun_target(target_ids.front(), pos, filter_on, filter_off);
+		}
+	}
+
+	// Console << U"----- toml読み取り完了";
+}
+
 void PhysicsElements::Stage::update_out_room()
 {
 	Vec2 const& ppos = player->get_pos();
@@ -487,6 +740,250 @@ void PhysicsElements::Stage::draw_time() const
 		RectF(Vec2(1140, 670), Vec2(140, 80)).draw({ Palette::White, 0.6 });
 		FontAsset(U"Alkatra30")(stopwatch.format(U"mm.ss.xx")).draw(Vec2(1150, 680), Palette::Black);
 	}
+}
+
+void PhysicsElements::Stage::updateFadeIn(double t)
+{
+	if (!shader_stopwatch.isStarted()) {
+		shader_stopwatch.start();
+	}
+	shader_time->time = static_cast<float>(shader_stopwatch.sF());
+}
+
+void PhysicsElements::Stage::draw_tutorial1() const {
+	// 光
+	double length = 120;
+	int32 n = 16;
+	for (int32 i = 0; i < n; ++i) {
+		Vec2 const p1 = start_pos + length * Vec2(Cos(((double)i / n) * Math::TwoPi), Sin(((double)i / n) * Math::TwoPi));
+		Vec2 const p2 = start_pos + length * Vec2(Cos(((double)(i + 1) / n) * Math::TwoPi), Sin(((double)(i + 1) / n) * Math::TwoPi));
+		Triangle(start_pos, p1, p2).draw(ColorF(1, 1, 1, 0.5), ColorF(1, 1, 1, 0), ColorF(1, 1, 1, 0));
+	}
+
+	length = 150;
+	for (int32 i = 0; i < n; ++i) {
+		if (i % 2 == 0) continue;
+		Vec2 const p1 = start_pos + length * Vec2(Cos(((double)i / n - Scene::Time() * 0.04) * Math::TwoPi), Sin(((double)i / n - Scene::Time() * 0.04) * Math::TwoPi));
+		Vec2 const p2 = start_pos + length * Vec2(Cos(((double)(i + 1) / n - Scene::Time() * 0.04) * Math::TwoPi), Sin(((double)(i + 1) / n - Scene::Time() * 0.04) * Math::TwoPi));
+		Triangle(start_pos, p1, p2).draw(ColorF(1, 1, 1, 0.5), ColorF(1, 1, 1, 0.2), ColorF(1, 1, 1, 0.2));
+	}
+
+	// 説明用
+	// 操作説明1
+	Vec2 const& ppos = player->get_pos();
+	double a = 0;
+	if (ppos.x < 740 && ppos.y > 360) {
+		a = 1.0;
+	}
+	else {
+		a = 0.9;
+	}
+	RoundRect(Vec2(416, 460), Vec2(224, 140), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"操作").draw(Vec2(426, 466), { Palette::Steelblue, a });
+	TextureAsset(U"icon_a_key").draw(Vec2(448, 552), { Palette::Steelblue, a });
+	TextureAsset(U"icon_arrow_left").draw(Vec2(480, 552), { Palette::Steelblue, a });
+	TextureAsset(U"icon_d_key").draw(Vec2(576, 552), { Palette::Steelblue, a });
+	TextureAsset(U"icon_arrow_right").draw(Vec2(544, 552), { Palette::Steelblue, a });
+	TextureAsset(U"icon_w_key").draw(Vec2(511, 486), { Palette::Steelblue, a });
+	TextureAsset(U"icon_arrow_up").draw(Vec2(512, 520), { Palette::Steelblue, a });
+
+	// リトライ・ステージセレクトの説明
+	a = 1.0;
+	RoundRect(Vec2(64, 32), Vec2(320, 96), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Orangered, a });
+	TextureAsset(U"icon_r_key").draw(Vec2(84, 46), { Palette::Orangered, a });
+	FontAsset(U"RoundedMgenplus28")(U"リトライ").draw(Vec2(120, 40), { Palette::Orangered, a });
+	TextureAsset(U"icon_t_key").draw(Vec2(84, 84), { Palette::Orangered, a });
+	FontAsset(U"RoundedMgenplus28")(U"ステージセレクト").draw(Vec2(120, 78), { Palette::Orangered, a });
+
+	/*FontAsset(U"MamelonHiRegular30")(U"操作").draw(Vec2(426, 466), { Palette::Steelblue, a });
+	TextureAsset(U"icon_a_key").draw(Vec2(448, 552), { Palette::Steelblue, a });
+	TextureAsset(U"icon_arrow_left").draw(Vec2(480, 552), { Palette::Steelblue, a });
+	TextureAsset(U"icon_d_key").draw(Vec2(576, 552), { Palette::Steelblue, a });
+	TextureAsset(U"icon_arrow_right").draw(Vec2(544, 552), { Palette::Steelblue, a });
+	TextureAsset(U"icon_w_key").draw(Vec2(511, 486), { Palette::Steelblue, a });
+	TextureAsset(U"icon_arrow_up").draw(Vec2(512, 520), { Palette::Steelblue, a });*/
+
+	// 鍵の説明
+	if (ppos.x > 740 && ppos.y > 360) {
+		a = 1.0;
+	}
+	else {
+		a = 0.9;
+	}
+	RoundRect(Vec2(820, 580), Vec2(320, 128), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	// TextureAsset(U"emoji_face_crying").resized(30).draw(Vec2(200, 234), AlphaF(a));
+	// TextureAsset(U"emoji_key").resized(30).draw(Vec2(200, 269), AlphaF(a));
+	// TextureAsset(U"emoji_lock").resized(30).draw(Vec2(200, 300), AlphaF(a));
+	// FontAsset(U"MamelonHiRegular30")(U"に触れるとクリア").draw(Vec2(230, 234), { Palette::Steelblue, a });
+	// FontAsset(U"MamelonHiRegular30")(U"を取ると").draw(Vec2(230, 269), {Palette::Steelblue, a});
+	// FontAsset(U"MamelonHiRegular30")(U"を開けられる").draw(Vec2(230, 300), {Palette::Steelblue, a});
+
+	TextureAsset(U"emoji_face_crying").resized(30).draw(Vec2(840, 594), AlphaF(a));
+	TextureAsset(U"emoji_key").resized(30).draw(Vec2(840, 629), AlphaF(a));
+	TextureAsset(U"emoji_lock").resized(34).draw(Vec2(988, 625), AlphaF(a));
+	FontAsset(U"RoundedMgenplus28")(U"に触れるとクリア").draw(Vec2(870, 588), { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"を取ると").draw(Vec2(870, 623), { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"を").draw(Vec2(1020, 623), { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"開けられる").draw(Vec2(840, 658), { Palette::Steelblue, a });
+
+	if (ppos.x > 440 && ppos.y < 360) {
+		a = 1.0;
+	}
+	else {
+		a = 0.9;
+	}
+	RoundRect(Vec2(800, 100), Vec2(350, 90), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	// draw_mouse(Vec2(150, -180), 12.0, 2.0, 2, {Palette::Steelblue, a});
+	FontAsset(U"RoundedMgenplus28")(U"右クリックで壁に\nワイヤをつける・外す").draw(Vec2(820, 105), { Palette::Steelblue, a });
+	// TextureAsset(U"icon_z_key").draw(Vec2(720, 240), {Palette::Steelblue, a});
+	// FontAsset(U"MamelonHiRegular30")(U"でガイドの表示").draw(Vec2(750, 240), {Palette::Steelblue, a});
+	// 例を表示
+	Circle(Vec2(860, 40), 20).drawFrame(8, { Palette::Red, 0.6 });
+	TextureAsset(U"emoji_face_sanglass").resized(50).rotated(Math::QuarterPi).drawAt(Vec2(640, 180), AlphaF(0.6));
+	Line(Vec2(640, 180), Vec2(860, 40)).draw(LineStyle::SquareDot, 4.0, { Palette::Darkorange, 0.6 });
+	Line(Vec2(640, 180).movedBy(25, 25), Vec2(640, 180).movedBy(50, 50)).drawArrow(10, SizeF(20, 20), { Palette::Darkorange, 0.6 });
+
+	// オープニングの描画
+	opening_draw();
+}
+
+void PhysicsElements::Stage::draw_tutorial2() const
+{
+	Vec2 const& ppos = player->get_pos();
+	double a = 0;
+	if (ppos.x < 500 && ppos.y < 300) {
+		a = 1.0;
+	}
+	else {
+		a = 0.9;
+	}
+	RoundRect(Vec2(94, 94), Vec2(266, 80), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"点滅している壁に").draw(Vec2(106, 98), { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"当たるとミス").draw(Vec2(106, 130), { Palette::Steelblue, a });
+
+	if (ppos.x > 500 && ppos.y < 300) {
+		a = 1.0;
+	}
+	else {
+		a = 0.9;
+	}
+	RoundRect(Vec2(800, 128), Vec2(332, 152), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"左クリックで発砲").draw(Vec2(810, 130), { Palette::Steelblue, a });
+	GunTarget::draw_pos(Vec2(840, 200), false);
+	FontAsset(U"RoundedMgenplus28")(U"に弾を当てると").draw(Vec2(880, 180), { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"壁の状態が切り替わる").draw(Vec2(810, 230), { Palette::Steelblue, a });
+
+	if (ppos.y > 332) {
+		a = 1.0;
+	}
+	else {
+		a = 0.9;
+	}
+	RoundRect(Vec2(664, 576), Vec2(352, 90), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"発砲の反動で\n逆方向に速度を得られる").draw(Vec2(674, 578), { Palette::Steelblue, a });
+	Circle(Vec2(830, 420), 20).drawFrame(8, { Palette::Red, 0.6 });
+	TextureAsset(U"emoji_face_sanglass").resized(50).rotated(Math::QuarterPi).drawAt(Vec2(695, 510), AlphaF(0.5));
+	Line(Vec2(695, 510), Vec2(830, 420)).draw(LineStyle::SquareDot, 4.0, { Palette::Darkorange, 0.6 });
+	TextureAsset(U"emoji_gun").resized(45).rotated(Math::QuarterPi).drawAt(Vec2(665, 470), AlphaF(0.6));
+}
+
+void PhysicsElements::Stage::draw_tutorial3() const
+{
+	Vec2 const& ppos = player->get_pos();
+	double a = 0;
+	if (ppos.x < 600) {
+		a = 1.0;
+	}
+	else {
+		a = 0.9;
+	}
+	RoundRect(Vec2(256, 384), Vec2(298, 88), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"ワイヤが屈曲すると").draw(Vec2(266, 386), { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"速度が向上する").draw(Vec2(266, 422), { Palette::Steelblue, a });
+	Circle(Vec2(380, 100), 20).drawFrame(8, { Palette::Red, 0.4 });
+	TextureAsset(U"emoji_face_sanglass").resized(50).rotated(Math::QuarterPi).drawAt(Vec2(124, 338), AlphaF(0.4));
+	Line(Vec2(380, 100), Vec2(124, 338)).draw(LineStyle::SquareDot, 4.0, { Palette::Darkorange, 0.4 });
+
+	if (ppos.x > 600) {
+		a = 1.0;
+	}
+	else {
+		a = 0.9;
+	}
+	RoundRect(Vec2(800, 472), Vec2(320, 126), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"ワイヤ操作中は").draw(Vec2(810, 478), { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"左右移動をしない方が").draw(Vec2(810, 512), { Palette::Steelblue, a });
+	FontAsset(U"RoundedMgenplus28")(U"速度を出しやすい").draw(Vec2(810, 546), { Palette::Steelblue, a });
+	Circle(Vec2(960, 294), 20).drawFrame(8, { Palette::Red, 0.4 });
+	TextureAsset(U"emoji_face_sanglass").resized(50).rotated(Math::QuarterPi).drawAt(Vec2(674, 426), AlphaF(0.4));
+	Line(Vec2(960, 294), Vec2(674, 426)).draw(LineStyle::SquareDot, 4.0, { Palette::Darkorange, 0.4 });
+}
+
+void PhysicsElements::Stage::opening_setup()
+{
+	// オープニングステージ（最初のステージ）でなければ何もしない
+	if (stage_num != Global::stage_scene_id_offset) {
+		return;
+	}
+
+	// キーフレームの設定
+	opening_keyframe.set(U"opening_transition_t", { 0.5s, 0.0 }, { 1.5s, 1.0 }, EaseOutQuad)
+		.set(U"opening_title_t", { 1.5s, 0.0 }, { 2.0s, 1.0 }, EaseOutQuint)
+		.set(U"opening_anykey_t", { 2.5s, 0.0 }, { 3.0s, 1.0 }, EaseInOutQuad);
+
+	// タイトルを兼ねてるため特別処理、プレイヤーの動きをいったん止める
+	set_freeze(true);
+
+	// オープニングステージでは銃は使えないようにしておく
+	gun->set_freeze(true);
+	gun->set_hyde_gun(true);
+
+	// オープニングフラグのオン
+	is_opening = true;
+
+	// オープニングの明転用レンダーテクスチャのサイズ変更
+	rt_opening = RenderTexture(Scene::Size());
+
+	// カメラを寄る
+	camera.jumpTo(start_pos, 4.5);
+
+	// スタート
+	opening_keyframe.start();
+}
+
+void PhysicsElements::Stage::opening_update()
+{
+	// オープニングの終了判定
+	if (is_opening && opening_keyframe[U"opening_anykey_t"] > 0.5 && Keyboard::GetAllInputs().size() >= 1) {
+		// オープニング終了
+		is_opening = false;
+		// 物理演算を有効に
+		set_freeze(false);
+
+		// カメラ関連
+		Camera2DParameters param = Camera2DParameters::NoControl();
+		param.scaleSmoothTime = 0.7;
+		param.positionSmoothTime = 1.0;
+		camera.setParameters(param);
+		camera.setTargetCenter(Vec2(640, 360));
+		camera.setTargetScale(1.0);
+
+		// ステージタイマーのオン
+		stopwatch.start();
+	}
+}
+
+void PhysicsElements::Stage::opening_draw() const
+{
+	// タイトル
+	// FontAsset(U"RobotoSlab40")(U"EMOJENT").drawAt(TextStyle::Outline(0.2, Palette::Black), start_pos.movedBy(0, -50), Palette::Lightgoldenrodyellow);
+	double t = opening_keyframe[U"opening_title_t"];
+	FontAsset(U"RobotoSlab40MSDF")(U"EMOJENT").drawAt(TextStyle::Outline(0.2, { Palette::Black, t }), start_pos.movedBy(-70 * (1 - t), -50), { Palette::Lightgoldenrodyellow, t });
+
+	// anykey
+	t = opening_keyframe[U"opening_anykey_t"];
+	double a = t * (Periodic::Sine0_1(1.5s) * 0.5 + 0.5);
+	FontAsset(U"RobotoSlab14MSDF")(U"- PRESS ANY KEY -").drawAt(start_pos.movedBy(0, 50), { Palette::Black, a });
 }
 
 void PhysicsElements::Stage::update()
@@ -565,6 +1062,25 @@ void PhysicsElements::Stage::UpdatePhysics()
 void PhysicsElements::Stage::Draw() const
 {
 	draw_pipeline();
+
+	// オープニング中の最初の明転
+	if (is_opening) {
+		double t = opening_keyframe[U"opening_transition_t"];
+		if (t < 1.0) {
+			{
+				BlendState bs;
+				bs.srcAlpha = Blend::One;
+				bs.dstAlpha = Blend::Zero;
+				ScopedRenderTarget2D target(rt_opening.clear(ColorF(0, 0, 0, 1)));
+				ScopedRenderStates2D blend(bs);
+
+				double r = hypot(Scene::Width(), Scene::Height()) * t;
+				Circle(Scene::Center(), r).draw(ColorF(0, 0, 0, 0), ColorF(0, 0, 0, 1 - t * t));
+			}
+
+			rt_opening.draw();
+		}
+	}
 }
 
 //void PhysicsElements::Stage::drawFadeIn(double t) const {

@@ -34,9 +34,11 @@ void PhysicsElements::Stage_Tutorial1::draw_mouse(Vec2 const& pos, double const 
 void PhysicsElements::Stage_Tutorial1::init()
 {
 	// シーン関連
-	stage_scene_state = SceneState::Stage_Tutorial1;
 	stage_num = 0;
 	goal->set_stage_num(stage_num);
+
+	// シェーダーの処理を開始
+	shader_stopwatch.start();
 
 	// ステージの色
 	stage_col1 = Palette::White.lerp(Palette::Gray, 0.4);
@@ -150,7 +152,8 @@ void PhysicsElements::Stage_Tutorial1::create_stage()
 
 	// 施錠壁と解除アイテム
 	id = wall->addRect(Vec2(1056, 392), Vec2(32, 160));
-	wall_toggle_ignore.emplace_back(id);
+	// wall_toggle_ignore.emplace_back(id);
+	wall_icons.emplace_back(id, U"emoji_lock");
 	items->item_add(id, WallFilterType::Ignore, Vec2(1120, 328), U"emoji_key");
 
 	// ゴール
@@ -166,6 +169,7 @@ void PhysicsElements::Stage_Tutorial1::create_stage()
 	anim_keyframe.start();
 }
 
+/*
 void PhysicsElements::Stage_Tutorial1::draw_mid_layer() const
 {
 	// 光
@@ -212,13 +216,13 @@ void PhysicsElements::Stage_Tutorial1::draw_mid_layer() const
 	TextureAsset(U"icon_t_key").draw(Vec2(84, 84), { Palette::Orangered, a });
 	FontAsset(U"RoundedMgenplus28")(U"ステージセレクト").draw(Vec2(120, 78), { Palette::Orangered, a });
 
-	/*FontAsset(U"MamelonHiRegular30")(U"操作").draw(Vec2(426, 466), { Palette::Steelblue, a });
-	TextureAsset(U"icon_a_key").draw(Vec2(448, 552), { Palette::Steelblue, a });
-	TextureAsset(U"icon_arrow_left").draw(Vec2(480, 552), { Palette::Steelblue, a });
-	TextureAsset(U"icon_d_key").draw(Vec2(576, 552), { Palette::Steelblue, a });
-	TextureAsset(U"icon_arrow_right").draw(Vec2(544, 552), { Palette::Steelblue, a });
-	TextureAsset(U"icon_w_key").draw(Vec2(511, 486), { Palette::Steelblue, a });
-	TextureAsset(U"icon_arrow_up").draw(Vec2(512, 520), { Palette::Steelblue, a });*/
+	// FontAsset(U"MamelonHiRegular30")(U"操作").draw(Vec2(426, 466), { Palette::Steelblue, a });
+	// TextureAsset(U"icon_a_key").draw(Vec2(448, 552), { Palette::Steelblue, a });
+	// TextureAsset(U"icon_arrow_left").draw(Vec2(480, 552), { Palette::Steelblue, a });
+	// TextureAsset(U"icon_d_key").draw(Vec2(576, 552), { Palette::Steelblue, a });
+	// TextureAsset(U"icon_arrow_right").draw(Vec2(544, 552), { Palette::Steelblue, a });
+	// TextureAsset(U"icon_w_key").draw(Vec2(511, 486), { Palette::Steelblue, a });
+	// TextureAsset(U"icon_arrow_up").draw(Vec2(512, 520), { Palette::Steelblue, a });
 
 	// 鍵の説明
 	if (ppos.x > 740 && ppos.y > 360) {
@@ -265,71 +269,64 @@ void PhysicsElements::Stage_Tutorial1::draw_mid_layer() const
 	double t = anim_keyframe[U"opening_title_t"];
 	FontAsset(U"RobotoSlab40MSDF")(U"EMOJENT").drawAt(TextStyle::Outline(0.2, { Palette::Black, t }), start_pos.movedBy(-70 * (1 - t), -50), { Palette::Lightgoldenrodyellow, t });
 
-	/*
-	// 説明用
-	// 操作説明1
-	Vec2 const& ppos = player->get_pos();
-	double a = 0;
-	if (ppos.x < 100 && ppos.y > 0) {
-		a = 1.0;
-	}
-	else {
-		a = 0.3;
-	}
-	RoundRect(Vec2(-224, 100), Vec2(224, 140), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
-	FontAsset(U"MamelonHiRegular30")(U"操作").draw(Vec2(-214, 106), { Palette::Steelblue, a });
-	TextureAsset(U"icon_a_key").draw(Vec2(-192, 192), {Palette::Steelblue, a});
-	TextureAsset(U"icon_arrow_left").draw(Vec2(-160, 192), {Palette::Steelblue, a});
-	TextureAsset(U"icon_d_key").draw(Vec2(-64, 192), {Palette::Steelblue, a});
-	TextureAsset(U"icon_arrow_right").draw(Vec2(-96, 192), {Palette::Steelblue, a});
-	TextureAsset(U"icon_w_key").draw(Vec2(-129, 126), {Palette::Steelblue, a});
-	TextureAsset(U"icon_arrow_up").draw(Vec2(-128, 160), {Palette::Steelblue, a});
-
-	// 鍵の説明
-	if (ppos.x > 100 && ppos.y > 0) {
-		a = 1.0;
-	}
-	else {
-		a = 0.3;
-	}
-	RoundRect(Vec2(180, 220), Vec2(320, 128), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	// // 説明用
+	// // 操作説明1
+	// Vec2 const& ppos = player->get_pos();
+	// double a = 0;
+	// if (ppos.x < 100 && ppos.y > 0) {
+	// 	a = 1.0;
+	// }
+	// else {
+	// 	a = 0.3;
+	// }
+	// RoundRect(Vec2(-224, 100), Vec2(224, 140), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	// FontAsset(U"MamelonHiRegular30")(U"操作").draw(Vec2(-214, 106), { Palette::Steelblue, a });
+	// TextureAsset(U"icon_a_key").draw(Vec2(-192, 192), {Palette::Steelblue, a});
+	// TextureAsset(U"icon_arrow_left").draw(Vec2(-160, 192), {Palette::Steelblue, a});
+	// TextureAsset(U"icon_d_key").draw(Vec2(-64, 192), {Palette::Steelblue, a});
+	// TextureAsset(U"icon_arrow_right").draw(Vec2(-96, 192), {Palette::Steelblue, a});
+	// TextureAsset(U"icon_w_key").draw(Vec2(-129, 126), {Palette::Steelblue, a});
+	// TextureAsset(U"icon_arrow_up").draw(Vec2(-128, 160), {Palette::Steelblue, a});
+	// 
+	// // 鍵の説明
+	// if (ppos.x > 100 && ppos.y > 0) {
+	// 	a = 1.0;
+	// }
+	// else {
+	// 	a = 0.3;
+	// }
+	// RoundRect(Vec2(180, 220), Vec2(320, 128), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	// // TextureAsset(U"emoji_face_crying").resized(30).draw(Vec2(200, 234), AlphaF(a));
+	// // TextureAsset(U"emoji_key").resized(30).draw(Vec2(200, 269), AlphaF(a));
+	// // TextureAsset(U"emoji_lock").resized(30).draw(Vec2(200, 300), AlphaF(a));
+	// // FontAsset(U"MamelonHiRegular30")(U"に触れるとクリア").draw(Vec2(230, 234), { Palette::Steelblue, a });
+	// // FontAsset(U"MamelonHiRegular30")(U"を取ると").draw(Vec2(230, 269), {Palette::Steelblue, a});
+	// // FontAsset(U"MamelonHiRegular30")(U"を開けられる").draw(Vec2(230, 300), {Palette::Steelblue, a});
+	// 
 	// TextureAsset(U"emoji_face_crying").resized(30).draw(Vec2(200, 234), AlphaF(a));
 	// TextureAsset(U"emoji_key").resized(30).draw(Vec2(200, 269), AlphaF(a));
-	// TextureAsset(U"emoji_lock").resized(30).draw(Vec2(200, 300), AlphaF(a));
+	// TextureAsset(U"emoji_lock").resized(34).draw(Vec2(348, 265), AlphaF(a));
 	// FontAsset(U"MamelonHiRegular30")(U"に触れるとクリア").draw(Vec2(230, 234), { Palette::Steelblue, a });
-	// FontAsset(U"MamelonHiRegular30")(U"を取ると").draw(Vec2(230, 269), {Palette::Steelblue, a});
-	// FontAsset(U"MamelonHiRegular30")(U"を開けられる").draw(Vec2(230, 300), {Palette::Steelblue, a});
-
-	TextureAsset(U"emoji_face_crying").resized(30).draw(Vec2(200, 234), AlphaF(a));
-	TextureAsset(U"emoji_key").resized(30).draw(Vec2(200, 269), AlphaF(a));
-	TextureAsset(U"emoji_lock").resized(34).draw(Vec2(348, 265), AlphaF(a));
-	FontAsset(U"MamelonHiRegular30")(U"に触れるとクリア").draw(Vec2(230, 234), { Palette::Steelblue, a });
-	FontAsset(U"MamelonHiRegular30")(U"を取ると").draw(Vec2(230, 269), { Palette::Steelblue, a });
-	FontAsset(U"MamelonHiRegular30")(U"を").draw(Vec2(380, 269), { Palette::Steelblue, a });
-	FontAsset(U"MamelonHiRegular30")(U"開けられる").draw(Vec2(200, 300), { Palette::Steelblue, a });
-
-	if (ppos.x > -200 && ppos.y < 0) {
-		a = 1.0;
-	}
-	else {
-		a = 0.3;
-	}
-	RoundRect(Vec2(90, -200), Vec2(310, 128), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
-	// draw_mouse(Vec2(150, -180), 12.0, 2.0, 2, {Palette::Steelblue, a});
-	FontAsset(U"MamelonHiRegular30")(U"右クリックで\n壁にワイヤをつける").draw(Vec2(110, -186), {Palette::Steelblue, a});
-	TextureAsset(U"icon_z_key").draw(Vec2(110, -120), {Palette::Steelblue, a});
-	FontAsset(U"MamelonHiRegular30")(U"でガイドの表示").draw(Vec2(140, -120), {Palette::Steelblue, a});
-
-	// タイトル
-	// FontAsset(U"RobotoSlab40")(U"EMOJENT").drawAt(TextStyle::Outline(0.2, Palette::Black), start_pos.movedBy(0, -50), Palette::Lightgoldenrodyellow);
-	double t = anim_keyframe[U"opening_title_t"];
-	FontAsset(U"RobotoSlab40MSDF")(U"EMOJENT").drawAt(TextStyle::Outline(0.2, { Palette::Black, t }), start_pos.movedBy(-70 * (1 - t), -50), { Palette::Lightgoldenrodyellow, t });
-	*/
-
-
-
-
-
+	// FontAsset(U"MamelonHiRegular30")(U"を取ると").draw(Vec2(230, 269), { Palette::Steelblue, a });
+	// FontAsset(U"MamelonHiRegular30")(U"を").draw(Vec2(380, 269), { Palette::Steelblue, a });
+	// FontAsset(U"MamelonHiRegular30")(U"開けられる").draw(Vec2(200, 300), { Palette::Steelblue, a });
+	// 
+	// if (ppos.x > -200 && ppos.y < 0) {
+	// 	a = 1.0;
+	// }
+	// else {
+	// 	a = 0.3;
+	// }
+	// RoundRect(Vec2(90, -200), Vec2(310, 128), 10).draw({ Palette::White, a }).drawFrame(4.0, { Palette::Steelblue, a });
+	// // draw_mouse(Vec2(150, -180), 12.0, 2.0, 2, {Palette::Steelblue, a});
+	// FontAsset(U"MamelonHiRegular30")(U"右クリックで\n壁にワイヤをつける").draw(Vec2(110, -186), {Palette::Steelblue, a});
+	// TextureAsset(U"icon_z_key").draw(Vec2(110, -120), {Palette::Steelblue, a});
+	// FontAsset(U"MamelonHiRegular30")(U"でガイドの表示").draw(Vec2(140, -120), {Palette::Steelblue, a});
+	// 
+	// // タイトル
+	// // FontAsset(U"RobotoSlab40")(U"EMOJENT").drawAt(TextStyle::Outline(0.2, Palette::Black), start_pos.movedBy(0, -50), Palette::Lightgoldenrodyellow);
+	// double t = anim_keyframe[U"opening_title_t"];
+	// FontAsset(U"RobotoSlab40MSDF")(U"EMOJENT").drawAt(TextStyle::Outline(0.2, { Palette::Black, t }), start_pos.movedBy(-70 * (1 - t), -50), { Palette::Lightgoldenrodyellow, t });
 
 	//Array<Glyph> glyphs = FontAsset(U"RobotoSlab40").getGlyphs(U"EMOJENT");
 	//double t = anim_keyframe[U"opening_title_t"];
@@ -351,10 +348,12 @@ void PhysicsElements::Stage_Tutorial1::draw_mid_layer() const
 	a = t * (Periodic::Sine0_1(1.5s) * 0.5 + 0.5);
 	FontAsset(U"RobotoSlab14MSDF")(U"- PRESS ANY KEY -").drawAt(start_pos.movedBy(0, 50), { Palette::Black, a });
 }
+*/
 
 void PhysicsElements::Stage_Tutorial1::change_next_scene()
 {
-	changeScene(SceneState::Stage_Tutorial2, 500);
+	changeScene(getData().stage_num + 1, 500);
+	++getData().stage_num;
 }
 
 PhysicsElements::Stage_Tutorial1::Stage_Tutorial1(InitData const& init_data)
